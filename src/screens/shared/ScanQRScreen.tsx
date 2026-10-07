@@ -9,11 +9,13 @@ import {
   StatusBar,
   Animated,
   Dimensions,
+  TouchableOpacity,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Device from 'expo-device';
+import { supabase } from '../../config/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import attendanceService from '../../services/attendanceService';
 import Button from '../../components/common/Button';
@@ -95,6 +97,44 @@ export default function ScanQRScreen() {
       });
     }
 
+    setProcessing(false);
+  };
+
+  const handleSimulatedScan = async () => {
+    if (scanned || processing || !user || !role) return;
+    setScanned(true);
+    setProcessing(true);
+    try {
+      const { data: gym } = await supabase
+        .from('gyms')
+        .select('id, qr_secret')
+        .limit(1)
+        .maybeSingle();
+
+      if (!gym) {
+        setScanResult({
+          status: 'error',
+          message: 'No active gym record found in database.',
+        });
+        setProcessing(false);
+        return;
+      }
+
+      const deviceId = getDeviceId();
+      const result = await attendanceService.processScan(
+        user.id,
+        role,
+        deviceId,
+        gym.qr_secret,
+        gym.id
+      );
+      setScanResult(result);
+    } catch (err: any) {
+      setScanResult({
+        status: 'error',
+        message: err.message || 'Simulation failed.',
+      });
+    }
     setProcessing(false);
   };
 
@@ -236,11 +276,20 @@ export default function ScanQRScreen() {
 
             {/* Bottom */}
             <View style={styles.overlaySection}>
-              {processing && (
+              {processing ? (
                 <View style={styles.processingBadge}>
                   <Ionicons name="hourglass" size={16} color={colors.accent} />
                   <Text style={styles.processingText}>Verifying...</Text>
                 </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.simButton}
+                  onPress={handleSimulatedScan}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="flash" size={16} color={colors.warning} />
+                  <Text style={styles.simButtonText}>⚡ Quick Test Scan (Simulator)</Text>
+                </TouchableOpacity>
               )}
             </View>
           </View>
@@ -459,5 +508,22 @@ const styles = StyleSheet.create({
   resultActions: {
     width: '100%',
     marginTop: spacing.md,
+  },
+  simButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(26, 26, 46, 0.85)',
+    borderWidth: 1,
+    borderColor: colors.warning + '60',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: borderRadius.round,
+    marginTop: spacing.sm,
+  },
+  simButtonText: {
+    fontSize: fontSize.sm,
+    color: colors.warning,
+    fontWeight: fontWeight.semibold,
   },
 });

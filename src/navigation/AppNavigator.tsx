@@ -240,7 +240,7 @@ function ClientNavigator() {
 export default function AppNavigator() {
   const { session, role, isLoading } = useAuth();
 
-  if (isLoading) {
+  if (isLoading || (session && !role)) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator size="large" color={colors.primary} />
