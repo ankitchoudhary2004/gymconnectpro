@@ -11,6 +11,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -62,12 +63,11 @@ export default function LoginScreen({ navigation }: any) {
             {/* Logo & Header */}
             <View style={styles.header}>
               <View style={styles.logoContainer}>
-                <LinearGradient
-                  colors={['#6C5CE7', '#A29BFE']}
-                  style={styles.logoGradient}
-                >
-                  <Ionicons name="fitness" size={40} color="#fff" />
-                </LinearGradient>
+                <Image
+                  source={require('../../../assets/logo.png')}
+                  style={styles.logoImage}
+                  resizeMode="cover"
+                />
               </View>
               <Text style={styles.appName}>GymTrack Pro</Text>
               <Text style={styles.tagline}>Your Gym. Simplified.</Text>
@@ -161,19 +161,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   logoContainer: {
-    marginBottom: spacing.md,
-  },
-  logoGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: borderRadius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: spacing.sm,
     shadowColor: '#6C5CE7',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  logoImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   appName: {
     fontSize: fontSize.hero,
