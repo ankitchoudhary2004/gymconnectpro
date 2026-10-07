@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS public.client_routine_exercises (
 -- 13. EXERCISE LIBRARY
 CREATE TABLE IF NOT EXISTS public.exercises (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     muscle_group TEXT,
     description TEXT,
     image_url TEXT,
@@ -214,16 +214,19 @@ ALTER TABLE public.exercises ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- Profiles: Authenticated users can read all profiles; users can update their own
+DROP POLICY IF EXISTS "Profiles readable by authenticated users" ON public.profiles;
 CREATE POLICY "Profiles readable by authenticated users"
     ON public.profiles FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile"
     ON public.profiles FOR UPDATE
     TO authenticated
     USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Allow profile creation on signup" ON public.profiles;
 CREATE POLICY "Allow profile creation on signup"
     ON public.profiles FOR INSERT
     TO authenticated
@@ -232,73 +235,86 @@ CREATE POLICY "Allow profile creation on signup"
     ));
 
 -- Gyms: Readable and updatable by authenticated users
+DROP POLICY IF EXISTS "Gyms readable by authenticated" ON public.gyms;
 CREATE POLICY "Gyms readable by authenticated"
     ON public.gyms FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Gyms manageable by admins" ON public.gyms;
 CREATE POLICY "Gyms manageable by admins"
     ON public.gyms FOR ALL
     TO authenticated
     USING (true);
 
 -- Clients: Readable by authenticated, managed by admin & assigned trainers
+DROP POLICY IF EXISTS "Clients readable by authenticated" ON public.clients;
 CREATE POLICY "Clients readable by authenticated"
     ON public.clients FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Clients manageable by authenticated" ON public.clients;
 CREATE POLICY "Clients manageable by authenticated"
     ON public.clients FOR ALL
     TO authenticated
     USING (true);
 
 -- Memberships: Readable by authenticated, insert/update by admins
+DROP POLICY IF EXISTS "Memberships accessible by authenticated" ON public.memberships;
 CREATE POLICY "Memberships accessible by authenticated"
     ON public.memberships FOR ALL
     TO authenticated
     USING (true);
 
 -- Attendance: Full access for check-ins and tracking
+DROP POLICY IF EXISTS "Attendance full access for authenticated" ON public.attendance;
 CREATE POLICY "Attendance full access for authenticated"
     ON public.attendance FOR ALL
     TO authenticated
     USING (true);
 
 -- Health records: Full access for trainers, admins and client self-read
+DROP POLICY IF EXISTS "Health records accessible by authenticated" ON public.health_records;
 CREATE POLICY "Health records accessible by authenticated"
     ON public.health_records FOR ALL
     TO authenticated
     USING (true);
 
 -- Workout Templates & Exercises
+DROP POLICY IF EXISTS "Templates viewable by authenticated" ON public.workout_templates;
 CREATE POLICY "Templates viewable by authenticated"
     ON public.workout_templates FOR ALL
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Template exercises viewable by authenticated" ON public.template_exercises;
 CREATE POLICY "Template exercises viewable by authenticated"
     ON public.template_exercises FOR ALL
     TO authenticated
     USING (true);
 
 -- Client Routines & Exercises
+DROP POLICY IF EXISTS "Client routines accessible by authenticated" ON public.client_routines;
 CREATE POLICY "Client routines accessible by authenticated"
     ON public.client_routines FOR ALL
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Client routine exercises accessible by authenticated" ON public.client_routine_exercises;
 CREATE POLICY "Client routine exercises accessible by authenticated"
     ON public.client_routine_exercises FOR ALL
     TO authenticated
     USING (true);
 
 -- Exercise library & Notifications
+DROP POLICY IF EXISTS "Exercise library accessible by authenticated" ON public.exercises;
 CREATE POLICY "Exercise library accessible by authenticated"
     ON public.exercises FOR ALL
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Notifications accessible by recipient" ON public.notifications;
 CREATE POLICY "Notifications accessible by recipient"
     ON public.notifications FOR ALL
     TO authenticated
@@ -332,41 +348,43 @@ VALUES
     ('Tricep Rope Pushdowns', 'Triceps', 'Isolation movement for lateral and medial triceps heads'),
     ('Hanging Leg Raises', 'Core', 'Core abdominal flexion exercise'),
     ('Plank Hold', 'Core', 'Isometric core and spinal stabilizer exercise')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (name) DO NOTHING;
 
 -- Insert Default Workout Template (Push / Pull / Legs)
 DO $$
 DECLARE
     tpl_id UUID;
 BEGIN
-    INSERT INTO public.workout_templates (name, description, difficulty, goal)
-    VALUES (
-        '3-Day Push / Pull / Legs Hypertrophy',
-        'Classic 3-day split designed for lean muscle growth and strength progression.',
-        'intermediate',
-        'Muscle Building & Strength'
-    ) RETURNING id INTO tpl_id;
+    IF NOT EXISTS (SELECT 1 FROM public.workout_templates WHERE name = '3-Day Push / Pull / Legs Hypertrophy') THEN
+        INSERT INTO public.workout_templates (name, description, difficulty, goal)
+        VALUES (
+            '3-Day Push / Pull / Legs Hypertrophy',
+            'Classic 3-day split designed for lean muscle growth and strength progression.',
+            'intermediate',
+            'Muscle Building & Strength'
+        ) RETURNING id INTO tpl_id;
 
-    -- Day 1: Push (Monday = 1)
-    INSERT INTO public.template_exercises (template_id, day_of_week, exercise_name, muscle_group, sets, reps, weight_kg, rest_seconds, order_index)
-    VALUES
-        (tpl_id, 1, 'Barbell Bench Press', 'Chest', 4, 8, 70, 90, 1),
-        (tpl_id, 1, 'Incline Dumbbell Press', 'Chest', 3, 10, 24, 75, 2),
-        (tpl_id, 1, 'Overhead Shoulder Press', 'Shoulders', 3, 8, 45, 90, 3),
-        (tpl_id, 1, 'Lateral Raises', 'Shoulders', 4, 15, 10, 60, 4),
-        (tpl_id, 1, 'Tricep Rope Pushdowns', 'Triceps', 3, 12, 25, 60, 5);
+        -- Day 1: Push (Monday = 1)
+        INSERT INTO public.template_exercises (template_id, day_of_week, exercise_name, muscle_group, sets, reps, weight_kg, rest_seconds, order_index)
+        VALUES
+            (tpl_id, 1, 'Barbell Bench Press', 'Chest', 4, 8, 70, 90, 1),
+            (tpl_id, 1, 'Incline Dumbbell Press', 'Chest', 3, 10, 24, 75, 2),
+            (tpl_id, 1, 'Overhead Shoulder Press', 'Shoulders', 3, 8, 45, 90, 3),
+            (tpl_id, 1, 'Lateral Raises', 'Shoulders', 4, 15, 10, 60, 4),
+            (tpl_id, 1, 'Tricep Rope Pushdowns', 'Triceps', 3, 12, 25, 60, 5);
 
-    -- Day 2: Pull (Wednesday = 3)
-    INSERT INTO public.template_exercises (template_id, day_of_week, exercise_name, muscle_group, sets, reps, weight_kg, rest_seconds, order_index)
-    VALUES
-        (tpl_id, 3, 'Pull-Ups', 'Back', 4, 8, 0, 90, 1),
-        (tpl_id, 3, 'Barbell Bent-Over Row', 'Back', 4, 10, 60, 90, 2),
-        (tpl_id, 3, 'Dumbbell Bicep Curls', 'Biceps', 3, 12, 14, 60, 3);
+        -- Day 2: Pull (Wednesday = 3)
+        INSERT INTO public.template_exercises (template_id, day_of_week, exercise_name, muscle_group, sets, reps, weight_kg, rest_seconds, order_index)
+        VALUES
+            (tpl_id, 3, 'Pull-Ups', 'Back', 4, 8, 0, 90, 1),
+            (tpl_id, 3, 'Barbell Bent-Over Row', 'Back', 4, 10, 60, 90, 2),
+            (tpl_id, 3, 'Dumbbell Bicep Curls', 'Biceps', 3, 12, 14, 60, 3);
 
-    -- Day 3: Legs (Friday = 5)
-    INSERT INTO public.template_exercises (template_id, day_of_week, exercise_name, muscle_group, sets, reps, weight_kg, rest_seconds, order_index)
-    VALUES
-        (tpl_id, 5, 'Barbell Back Squat', 'Legs', 4, 8, 90, 120, 1),
-        (tpl_id, 5, 'Romanian Deadlift', 'Hamstrings', 3, 10, 80, 90, 2),
-        (tpl_id, 5, 'Plank Hold', 'Core', 3, 60, 0, 60, 3);
+        -- Day 3: Legs (Friday = 5)
+        INSERT INTO public.template_exercises (template_id, day_of_week, exercise_name, muscle_group, sets, reps, weight_kg, rest_seconds, order_index)
+        VALUES
+            (tpl_id, 5, 'Barbell Back Squat', 'Legs', 4, 8, 90, 120, 1),
+            (tpl_id, 5, 'Romanian Deadlift', 'Hamstrings', 3, 10, 80, 90, 2),
+            (tpl_id, 5, 'Plank Hold', 'Core', 3, 60, 0, 60, 3);
+    END IF;
 END $$;
