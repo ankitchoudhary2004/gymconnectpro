@@ -292,3 +292,48 @@ describe('Anti-Double-Scan Debouncing', () => {
     assert.strictEqual(isDuplicateCheckOut(lastOut, attemptTime), false);
   });
 });
+
+// ============================================================
+// 8. Admin Boss Personalized Salutation Tests
+// ============================================================
+describe('Admin Personalized Salutation', () => {
+  const getAdminGreeting = (date: Date = new Date()): string => {
+    const hour = date.getHours();
+    if (hour >= 4 && hour < 12) return 'Good Morning, Boss';
+    if (hour >= 12 && hour < 17) return 'Good Afternoon, Boss';
+    return 'Good Evening, Boss';
+  };
+
+  it('should return "Good Morning, Boss" between 04:00 and 11:59', () => {
+    const dawn = new Date(2026, 9, 7, 4, 0, 0);
+    const morning = new Date(2026, 9, 7, 9, 30, 0);
+    const lateMorning = new Date(2026, 9, 7, 11, 59, 0);
+
+    assert.strictEqual(getAdminGreeting(dawn), 'Good Morning, Boss');
+    assert.strictEqual(getAdminGreeting(morning), 'Good Morning, Boss');
+    assert.strictEqual(getAdminGreeting(lateMorning), 'Good Morning, Boss');
+  });
+
+  it('should return "Good Afternoon, Boss" between 12:00 and 16:59', () => {
+    const noon = new Date(2026, 9, 7, 12, 0, 0);
+    const midAfternoon = new Date(2026, 9, 7, 14, 30, 0);
+    const lateAfternoon = new Date(2026, 9, 7, 16, 59, 0);
+
+    assert.strictEqual(getAdminGreeting(noon), 'Good Afternoon, Boss');
+    assert.strictEqual(getAdminGreeting(midAfternoon), 'Good Afternoon, Boss');
+    assert.strictEqual(getAdminGreeting(lateAfternoon), 'Good Afternoon, Boss');
+  });
+
+  it('should return "Good Evening, Boss" between 17:00 and 03:59', () => {
+    const evening = new Date(2026, 9, 7, 17, 0, 0);
+    const primeTime = new Date(2026, 9, 7, 20, 15, 0);
+    const midnight = new Date(2026, 9, 7, 23, 59, 0);
+    const lateNight = new Date(2026, 9, 7, 2, 0, 0);
+
+    assert.strictEqual(getAdminGreeting(evening), 'Good Evening, Boss');
+    assert.strictEqual(getAdminGreeting(primeTime), 'Good Evening, Boss');
+    assert.strictEqual(getAdminGreeting(midnight), 'Good Evening, Boss');
+    assert.strictEqual(getAdminGreeting(lateNight), 'Good Evening, Boss');
+  });
+});
+

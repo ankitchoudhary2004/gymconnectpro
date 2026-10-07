@@ -21,6 +21,13 @@ import attendanceService from '../../services/attendanceService';
 import { Attendance, DashboardStats } from '../../types';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../theme';
 
+export const getAdminGreeting = (date: Date = new Date()): string => {
+  const hour = date.getHours();
+  if (hour >= 4 && hour < 12) return 'Good Morning, Boss';
+  if (hour >= 12 && hour < 17) return 'Good Afternoon, Boss';
+  return 'Good Evening, Boss';
+};
+
 export default function AdminDashboardScreen({ navigation }: any) {
   const { profile, signOut } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -112,12 +119,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
     setRefreshing(false);
   }, [loadDashboardData]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  };
+
 
   const formatTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -144,7 +146,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
         >
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
-              <Text style={styles.greeting}>{getGreeting()} 👋</Text>
+              <Text style={styles.greeting}>{getAdminGreeting()} 👑</Text>
               <Text style={styles.userName}>{profile?.full_name || 'Admin'}</Text>
               <View style={styles.roleBadge}>
                 <Ionicons name="shield-checkmark" size={12} color={colors.primary} />
@@ -316,7 +318,9 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: fontSize.md,
-    color: colors.textSecondary,
+    color: colors.warning,
+    fontWeight: fontWeight.semibold,
+    letterSpacing: 0.2,
   },
   userName: {
     fontSize: fontSize.xxl,
