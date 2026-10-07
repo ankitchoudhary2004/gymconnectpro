@@ -39,7 +39,8 @@ export default function TrainerDashboardScreen({ navigation }: any) {
         .select('id')
         .eq('profile_id', user.id)
         .eq('date', today)
-        .single();
+        .limit(1)
+        .maybeSingle();
       setTodayCheckedIn(!!trainerAttendance);
 
       // Get assigned clients

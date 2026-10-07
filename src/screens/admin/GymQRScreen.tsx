@@ -36,9 +36,9 @@ export default function GymQRScreen() {
         .from('gyms')
         .select('*')
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code === 'PGRST116') {
+      if (!data) {
         // No gym exists, create one
         const newGym = {
           name: 'My Gym',

@@ -93,7 +93,7 @@ class ClientService {
           membership:memberships(*)
         `)
         .eq('id', clientId)
-        .single();
+        .maybeSingle();
 
       if (error || !data) return null;
 
@@ -225,7 +225,7 @@ class ClientService {
           .from('profiles')
           .select('id')
           .eq('email', params.email)
-          .single();
+          .maybeSingle();
 
         if (existingProfile) {
           userId = existingProfile.id;
@@ -256,7 +256,7 @@ class ClientService {
           { onConflict: 'profile_id' }
         )
         .select()
-        .single();
+        .maybeSingle();
 
       if (clientErr || !client) {
         return { success: false, error: clientErr?.message || 'Failed to create client profile' };

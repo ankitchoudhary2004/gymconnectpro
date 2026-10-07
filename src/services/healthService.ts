@@ -71,7 +71,7 @@ class HealthService {
           recorded_at: new Date().toISOString(),
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error adding health record:', error.message);

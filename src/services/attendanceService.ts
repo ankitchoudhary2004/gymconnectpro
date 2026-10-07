@@ -23,7 +23,7 @@ class AttendanceService {
         .select('*')
         .eq('id', gymId)
         .eq('qr_secret', qrSecret)
-        .single();
+        .maybeSingle();
 
       if (gymError || !gym) {
         return { status: 'error', message: 'Invalid QR code. Please try again.' };
@@ -34,9 +34,9 @@ class AttendanceService {
         .from('profiles')
         .select('device_id')
         .eq('id', profileId)
-        .single();
+        .maybeSingle();
 
-      if (profileError) {
+      if (profileError || !profile) {
         return { status: 'error', message: 'Could not verify your profile.' };
       }
 
@@ -73,7 +73,7 @@ class AttendanceService {
           .from('clients')
           .select('id')
           .eq('profile_id', profileId)
-          .single();
+          .maybeSingle();
 
         if (client) {
           const { data: membership } = await supabase
@@ -82,7 +82,7 @@ class AttendanceService {
             .eq('client_id', client.id)
             .order('expiry_date', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
           if (membership) {
             const expiryDate = new Date(membership.expiry_date);
@@ -98,7 +98,7 @@ class AttendanceService {
                 .from('profiles')
                 .select('full_name')
                 .eq('id', profileId)
-                .single();
+                .maybeSingle();
 
               await this.sendAdminNotification(
                 gymId,
